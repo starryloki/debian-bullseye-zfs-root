@@ -27,7 +27,7 @@
 ### Static settings, overridable by TARGET_* environment variables
 
 ZPOOL=${TARGET_ZPOOL:-rpool}
-TARGETDIST=${TARGET_DIST:-buster}
+TARGETDIST=${TARGET_DIST:-bullseye}
 
 PARTBIOS=${TARGET_PARTBIOS:-1}
 PARTEFI=${TARGET_PARTEFI:-2}
@@ -155,6 +155,11 @@ case $DEBRELEASE in
 	10*)
 		echo "deb http://deb.debian.org/debian/ buster contrib non-free" >/etc/apt/sources.list.d/contrib-non-free.list
 		test -f /var/lib/apt/lists/deb.debian.org_debian_dists_buster_non-free_binary-amd64_Packages || apt-get update
+		if [ ! -d /usr/share/doc/zfs-dkms ]; then NEED_PACKAGES+=(zfs-dkms); fi
+		;;
+	11*)
+		echo "deb http://deb.debian.org/debian/ bullseye contrib non-free" >/etc/apt/sources.list.d/contrib-non-free.list
+		test -f /var/lib/apt/lists/deb.debian.org_debian_dists_bullseye_non-free_binary-amd64_Packages || apt-get update
 		if [ ! -d /usr/share/doc/zfs-dkms ]; then NEED_PACKAGES+=(zfs-dkms); fi
 		;;
 	*)
