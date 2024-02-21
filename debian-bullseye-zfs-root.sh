@@ -199,15 +199,15 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-zfs set compression=lz4 $ZPOOL
+zfs set compression=off $ZPOOL
 # The two properties below improve performance but reduce compatibility with non-Linux ZFS implementations
 # Commented out by default
 #zfs set xattr=sa $ZPOOL
 #zfs set acltype=posixacl $ZPOOL
 
 zfs create $ZPOOL/ROOT
-zfs create -o mountpoint=/ $ZPOOL/ROOT/debian-$TARGETDIST
-zpool set bootfs=$ZPOOL/ROOT/debian-$TARGETDIST $ZPOOL
+zfs create -o mountpoint=/ $ZPOOL/ROOT/debian
+zpool set bootfs=$ZPOOL/ROOT/debian $ZPOOL
 
 zfs create -o mountpoint=/tmp -o setuid=off -o exec=off -o devices=off -o com.sun:auto-snapshot=false -o quota=$SIZETMP $ZPOOL/tmp
 chmod 1777 /target/tmp
@@ -223,10 +223,10 @@ mkdir -v -m 1777 /target/var/tmp
 mount -t zfs $ZPOOL/var/tmp /target/var/tmp
 chmod 1777 /target/var/tmp
 
-zfs create -V $SIZESWAP -b "$(getconf PAGESIZE)" -o primarycache=metadata -o com.sun:auto-snapshot=false -o logbias=throughput -o sync=always $ZPOOL/swap
+#zfs create -V $SIZESWAP -b "$(getconf PAGESIZE)" -o primarycache=metadata -o com.sun:auto-snapshot=false -o logbias=throughput -o sync=always $ZPOOL/swap
 # sometimes needed to wait for /dev/zvol/$ZPOOL/swap to appear
-sleep 2
-mkswap -f /dev/zvol/$ZPOOL/swap
+#sleep 2
+#mkswap -f /dev/zvol/$ZPOOL/swap
 
 zpool status
 zfs list
@@ -248,7 +248,7 @@ cat << EOF >/target/etc/fstab
 # that works even if disks are added and removed. See fstab(5).
 #
 # <file system>         <mount point>   <type>  <options>       <dump>  <pass>
-/dev/zvol/$ZPOOL/swap     none            swap    defaults        0       0
+#/dev/zvol/$ZPOOL/swap     none            swap    defaults        0       0
 $ZPOOL/var                /var            zfs     defaults        0       0
 $ZPOOL/var/tmp            /var/tmp        zfs     defaults        0       0
 EOF
@@ -277,7 +277,7 @@ if [ "${GRUBPKG:0:8}" == "grub-efi" ]; then
 	for EFIPARTITION in "${EFIPARTITIONS[@]}"; do
 		mkdosfs -F 32 -n EFI-$I $EFIPARTITION
 		mount $EFIPARTITION /target/boot/efi
-		chroot /target /usr/sbin/grub-install --target=x86_64-efi --no-uefi-secure-boot --efi-directory=/boot/efi --bootloader-id="Debian $TARGETDIST (RAID disk $I)" --recheck --no-floppy
+		chroot /target /usr/sbin/grub-install --target=x86_64-efi --no-uefi-secure-boot --efi-directory=/boot/efi --bootloader-id="Debian" --recheck --no-floppy
 		umount $EFIPARTITION
 		if [ $I -gt 0 ]; then
 			EFIBAKPART="#"
